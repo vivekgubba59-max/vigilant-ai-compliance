@@ -1,0 +1,133 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, ArrowRight, Mail, Lock, Sparkles } from 'lucide-react';
+import { useApp } from '@/components/Layout/AppContext';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { toggleDemoMode, isDemoMode } = useApp();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    // Simulate auth success for hackathon
+    router.push('/dashboard');
+  };
+
+  const handleDemoBypass = () => {
+    // Ensure Demo Mode is active
+    if (!isDemoMode) toggleDemoMode();
+    router.push('/dashboard');
+  };
+
+  return (
+    <div className="dark min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center px-4 relative selection:bg-blue-600/30">
+      {/* Background decoration */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[350px] h-[350px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none -z-10" />
+
+      {/* Brand Header */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-600 shadow-xl shadow-blue-500/20 text-white">
+          <ShieldCheck className="w-6 h-6" />
+        </div>
+        <div>
+          <span className="font-extrabold tracking-tight text-xl text-white block">Vigilant AI</span>
+          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Regulatory Intelligence</span>
+        </div>
+      </div>
+
+      {/* Auth Card */}
+      <div className="w-full max-w-md p-8 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-xl shadow-2xl">
+        <h2 className="text-xl font-bold mb-1 text-center">Welcome back</h2>
+        <p className="text-xs text-slate-400 text-center mb-6">Enter your credentials to access your dashboard</p>
+
+        {error && (
+          <div className="p-3 mb-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="demo@vigilant.ai"
+                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="password" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-[10px] text-blue-400 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 transition-all font-semibold text-sm flex items-center justify-center gap-2 group hover:scale-[1.01]"
+          >
+            Sign In
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="h-px bg-white/5 flex-1" />
+          <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Or Evaluators Bypass</span>
+          <div className="h-px bg-white/5 flex-1" />
+        </div>
+
+        {/* One Click Demo bypass */}
+        <button
+          onClick={handleDemoBypass}
+          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-600/10 to-amber-500/10 border border-amber-500/30 text-amber-400 hover:from-amber-500/20 hover:to-amber-500/20 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+        >
+          <Sparkles className="w-4 h-4" />
+          Run Interactive Demo Mode
+        </button>
+
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Don&apos;t have an account?{' '}
+          <Link href="/signup" className="text-blue-400 hover:underline">
+            Create account
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
