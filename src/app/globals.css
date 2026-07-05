@@ -309,11 +309,11 @@ textarea:disabled {
 
 /* Extracted Compliance Checklist Text Theme Color Adaptability */
 .checklist-container input.checklist-item-input {
-  color: #111827 !important;
+  color: #000000 !important;
   background-color: transparent !important;
 }
 
 .dark .checklist-container input.checklist-item-input {
-  color: #f9fafb !important;
+  color: #000000 !important;
   background-color: transparent !important;
 }

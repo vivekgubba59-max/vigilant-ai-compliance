@@ -347,7 +347,7 @@ export default function DocumentUploadPage() {
                     
                     <div className="space-y-2 checklist-container">
                       {(activeDoc.extracted_data?.checklists || []).map((item, idx) => (
-                        <div key={idx} className="p-2 border border-border bg-background rounded-lg flex items-center gap-2 relative group">
+                        <div key={idx} className="p-2 border border-border bg-white rounded-lg flex items-center gap-2 relative group">
                           <CheckCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                           {/* Compliance checklist input */}
                           <input
