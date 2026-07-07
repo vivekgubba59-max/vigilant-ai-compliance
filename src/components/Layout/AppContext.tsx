@@ -9,7 +9,8 @@ import {
   ChatMessage, 
   AuditLog, 
   DemoDatabase,
-  initialCompany 
+  initialCompany,
+  User 
 } from '@/lib/mockData';
 import { callGeminiAgent } from '@/lib/gemini';
 
@@ -26,7 +27,7 @@ interface AppContextType {
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
   documents: Document[];
-  uploadDocument: (fileName: string, fileSize: number) => Promise<void>;
+  uploadDocument: (fileName: string, fileSize: number, fileText: string, fileBase64?: string, fileMimeType?: string) => Promise<void>;
   updateDocument: (doc: Document) => void;
   chatMessages: ChatMessage[];
   sendChatMessage: (message: string) => Promise<void>;
@@ -35,6 +36,10 @@ interface AppContextType {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   isLoading: boolean;
+  currentUser: User | null;
+  loginUser: (email: string, password: string) => Promise<boolean>;
+  signupUser: (fullName: string, email: string, password: string) => Promise<string | null>;
+  logoutUser: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -50,6 +55,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Sync state from DemoDatabase (localStorage wrappers) on client mount
   useEffect(() => {
@@ -59,6 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDocuments(DemoDatabase.getDocuments());
     setChatMessages(DemoDatabase.getChatMessages());
     setAuditLogs(DemoDatabase.getAuditLogs());
+    setCurrentUser(DemoDatabase.getSessionUser());
 
     const savedKey = localStorage.getItem('vigilant_gemini_api_key') || '';
     setApiKey(savedKey);
@@ -142,25 +149,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNotifications(nextList);
   };
 
-  const uploadDocument = async (fileName: string, fileSize: number) => {
+  const uploadDocument = async (
+    fileName: string, 
+    fileSize: number, 
+    fileText: string,
+    fileBase64?: string,
+    fileMimeType?: string
+  ) => {
     setIsLoading(true);
     try {
       const docList = DemoDatabase.getDocuments();
       
+      const cleanText = (fileText || '').trim();
+      if (cleanText.length < 15) {
+        throw new Error('NO_READABLE_TEXT');
+      }
+
       // Call AI parse engine
       const aiResult = await callGeminiAgent('parse_document', {
         fileName,
-        fileText: `Uploaded standard compliance documentation file: ${fileName}`
+        fileText: cleanText,
+        fileBase64,
+        fileMimeType
       });
+
+      const isComp = aiResult.is_compliance !== false;
 
       const newDoc: Document = {
         id: `doc-${Date.now()}`,
         company_id: company.id,
         file_name: fileName,
         file_url: '#',
-        file_type: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_type: fileName.endsWith('.pdf') ? 'application/pdf' : 
+                   (fileName.endsWith('.png') ? 'image/png' : 'image/jpeg'),
         file_size: fileSize,
-        summary: aiResult.summary,
+        summary: isComp ? aiResult.summary : aiResult.reason,
         extracted_data: aiResult,
         status: 'processed',
         uploaded_by: 'user-123',
@@ -170,8 +193,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       DemoDatabase.saveDocuments([newDoc, ...docList]);
       setDocuments(DemoDatabase.getDocuments());
 
-      // Auto generate checklists extracted from document into the Tracker!
-      if (aiResult.checklists && aiResult.checklists.length > 0) {
+      // Auto generate checklists extracted from document into the Tracker ONLY if it is compliance related!
+      if (isComp && aiResult.checklists && aiResult.checklists.length > 0) {
         const compList = DemoDatabase.getCompliances();
         const newComps: Compliance[] = aiResult.checklists.map((task: string, index: number) => {
           // Parse due date if any extracted, otherwise set in 7 days
@@ -197,8 +220,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCompany(DemoDatabase.getCompany());
       }
 
-      // Add warning notifications if penalties detected
-      if (aiResult.penalties && aiResult.penalties.length > 0) {
+      // Add warning notifications if penalties detected and it is compliance related!
+      if (isComp && aiResult.penalties && aiResult.penalties.length > 0) {
         const notifList = DemoDatabase.getNotifications();
         const warningNotif: Notification = {
           id: `notif-${Date.now()}`,
@@ -215,10 +238,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       DemoDatabase.addAuditLog('Document Uploaded & Parsed', `Processed "${fileName}" using AI compliances extraction.`);
       setAuditLogs(DemoDatabase.getAuditLogs());
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      if (e.message !== 'LOW_CONFIDENCE' && e.message !== 'NO_READABLE_TEXT') {
+        console.error(e);
+      } else {
+        console.warn("Upload document warning:", e.message);
+      }
       DemoDatabase.addAuditLog('Document Upload Failed', `Failed parsing "${fileName}"`);
       setAuditLogs(DemoDatabase.getAuditLogs());
+      throw e; // rethrow so UI can handle toast and progress errors!
     } finally {
       setIsLoading(false);
     }
@@ -276,6 +304,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle('dark', nextTheme === 'dark');
   };
 
+  const loginUser = async (email: string, password: string): Promise<boolean> => {
+    const user = DemoDatabase.loginUser(email, password);
+    if (user) {
+      setCurrentUser(user);
+      return true;
+    }
+    return false;
+  };
+
+  const signupUser = async (fullName: string, email: string, password: string): Promise<string | null> => {
+    const result = DemoDatabase.registerUser(fullName, email, password);
+    if (typeof result === 'string') {
+      return result;
+    }
+    setCurrentUser(result);
+    return null;
+  };
+
+  const logoutUser = () => {
+    DemoDatabase.setSessionUser(null);
+    setCurrentUser(null);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -299,7 +350,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         auditLogs,
         theme,
         toggleTheme,
-        isLoading
+        isLoading,
+        currentUser,
+        loginUser,
+        signupUser,
+        logoutUser
       }}
     >
       {children}

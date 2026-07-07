@@ -42,11 +42,37 @@ export interface Document {
   file_size: number;
   summary?: string;
   extracted_data?: {
-    checklists: string[];
-    deadlines: { title: string; date: string }[];
-    penalties: { violation: string; amount: number }[];
-    action_items: string[];
-    warnings: string[];
+    is_compliance?: boolean;
+    reason?: string;
+    confidence_score?: number;
+    documentType?: string;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    seller?: string;
+    buyer?: string;
+    sellerGSTIN?: string;
+    buyerGSTIN?: string;
+    taxableAmount?: number;
+    cgst?: number;
+    sgst?: number;
+    igst?: number;
+    totalTax?: number;
+    grandTotal?: number;
+    hsnCodes?: string[];
+    state?: string;
+    placeOfSupply?: string;
+    ocr_confidence?: number;
+    ai_confidence?: number;
+    compliance_checks?: { label: string; status: string }[];
+    checklists?: string[];
+    deadlines?: { title: string; date: string }[];
+    penalties?: { violation: string; amount: number }[];
+    action_items?: string[];
+    warnings?: string[];
+    validation_errors?: string[];
+    validation_warnings?: string[];
+    validation_recommendations?: string[];
+    validation_result?: string;
   };
   status: 'processing' | 'processed' | 'failed';
   uploaded_by: string;
@@ -80,6 +106,22 @@ export interface AuditLog {
   details: string;
   created_at: string;
 }
+
+export interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  password?: string;
+  role: string;
+}
+
+export const defaultUser: User = {
+  id: 'user-default',
+  fullName: 'Vivek Gubba',
+  email: 'demo@vigilant.ai',
+  password: 'password',
+  role: 'Compliance Manager'
+};
 
 // Initial Mock Company Profile
 export const initialCompany: Company = {
@@ -304,6 +346,54 @@ export function setLocalState<T>(key: string, value: T): void {
 
 // Global state controller for Demo Mode
 export class DemoDatabase {
+  static getUsers(): User[] {
+    return getLocalState<User[]>('users', [defaultUser]);
+  }
+
+  static saveUsers(users: User[]): void {
+    setLocalState('users', users);
+  }
+
+  static getSessionUser(): User | null {
+    return getLocalState<User | null>('session_user', null);
+  }
+
+  static setSessionUser(user: User | null): void {
+    setLocalState('session_user', user);
+  }
+
+  static registerUser(fullName: string, email: string, password: string): User | string {
+    const users = this.getUsers();
+    const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      return 'Email address is already registered.';
+    }
+    const newUser: User = {
+      id: `user-${Date.now()}`,
+      fullName,
+      email,
+      password,
+      role: 'Compliance Manager'
+    };
+    this.saveUsers([...users, newUser]);
+    this.setSessionUser(newUser);
+    this.addAuditLog('User Registered', `Account created for ${fullName} (${email})`);
+    return newUser;
+  }
+
+  static loginUser(email: string, password: string): User | null {
+    const users = this.getUsers();
+    const user = users.find(
+      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+    if (user) {
+      this.setSessionUser(user);
+      this.addAuditLog('User Logged In', `${user.fullName} logged in successfully.`);
+      return user;
+    }
+    return null;
+  }
+
   static getCompany(): Company {
     return getLocalState<Company>('company', initialCompany);
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, ArrowRight, Mail, Lock, Sparkles } from 'lucide-react';
@@ -8,24 +8,33 @@ import { useApp } from '@/components/Layout/AppContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toggleDemoMode, isDemoMode } = useApp();
+  const { toggleDemoMode, isDemoMode, loginUser, logoutUser } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    logoutUser();
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
     }
-    // Simulate auth success for hackathon
-    router.push('/dashboard');
+    const success = await loginUser(email, password);
+    if (success) {
+      router.push('/dashboard');
+    } else {
+      setError('Invalid email or password. Hint: default is demo@vigilant.ai / password');
+    }
   };
 
-  const handleDemoBypass = () => {
+  const handleDemoBypass = async () => {
     // Ensure Demo Mode is active
     if (!isDemoMode) toggleDemoMode();
+    await loginUser('demo@vigilant.ai', 'password');
     router.push('/dashboard');
   };
 

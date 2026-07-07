@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import DemoBanner from './DemoBanner';
@@ -9,6 +9,9 @@ import { useApp } from './AppContext';
 
 export default function PageWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/';
+  const router = useRouter();
+  const { currentUser } = useApp();
+  const [mounted, setMounted] = useState(false);
 
   // Define paths that bypass the default dashboard Shell layout
   const isAuthOrLanding = 
@@ -17,8 +20,32 @@ export default function PageWrapper({ children }: { children: React.ReactNode })
     pathname.startsWith('/signup') || 
     pathname.startsWith('/forgot-password');
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !isAuthOrLanding && !currentUser) {
+      router.push('/login');
+    }
+  }, [mounted, currentUser, isAuthOrLanding, router]);
+
+  // Prevent flashing content during initial hydration check
+  if (!mounted) {
+    return null;
+  }
+
   if (isAuthOrLanding) {
     return <>{children}</>;
+  }
+
+  // If we are on a protected page but have no user session, show empty loading block while redirecting
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-blue-500/20 border-t-blue-600 animate-spin" />
+      </div>
+    );
   }
 
   return (

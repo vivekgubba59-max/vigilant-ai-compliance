@@ -19,7 +19,7 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname() || '';
-  const { company } = useApp();
+  const { company, logoutUser } = useApp();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -95,13 +95,16 @@ export default function Sidebar() {
           </span>
         </div>
         
-        <Link
-          href="/login"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-rose-500 hover:bg-rose-500/10 transition-all font-medium"
+        <button
+          onClick={() => {
+            logoutUser();
+            window.location.href = '/login';
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-rose-500 hover:bg-rose-500/10 transition-all font-medium text-left"
         >
           <LogOut className="w-4 h-4" />
           <span>Sign Out</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, ArrowRight, Mail, Lock, User, Sparkles } from 'lucide-react';
@@ -8,24 +8,33 @@ import { useApp } from '@/components/Layout/AppContext';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { toggleDemoMode, isDemoMode } = useApp();
+  const { toggleDemoMode, isDemoMode, signupUser, logoutUser, loginUser } = useApp();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSignup = (e: React.FormEvent) => {
+  useEffect(() => {
+    logoutUser();
+  }, []);
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password) {
       setError('Please fill in all fields.');
       return;
     }
-    // Setup simulated company setup on onboarding
-    router.push('/profile');
+    const errMsg = await signupUser(fullName, email, password);
+    if (errMsg) {
+      setError(errMsg);
+    } else {
+      router.push('/profile');
+    }
   };
 
-  const handleDemoBypass = () => {
+  const handleDemoBypass = async () => {
     if (!isDemoMode) toggleDemoMode();
+    await loginUser('demo@vigilant.ai', 'password');
     router.push('/dashboard');
   };
 

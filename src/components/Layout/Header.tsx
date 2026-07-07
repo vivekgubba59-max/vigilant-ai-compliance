@@ -16,7 +16,7 @@ import {
 import { formatDate } from '@/lib/utils';
 
 export default function Header() {
-  const { notifications, markNotificationRead, theme, toggleTheme } = useApp();
+  const { notifications, markNotificationRead, theme, toggleTheme, currentUser } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadNotifications = notifications.filter(n => !n.read);
@@ -131,8 +131,12 @@ export default function Header() {
             <User className="w-4 h-4" />
           </div>
           <div className="hidden sm:block">
-            <span className="text-xs font-semibold text-foreground block">Vivek Gubba</span>
-            <span className="text-[10px] text-muted-foreground block font-medium">Compliance Manager</span>
+            <span className="text-xs font-semibold text-foreground block">
+              {currentUser ? currentUser.fullName : 'Vivek Gubba'}
+            </span>
+            <span className="text-[10px] text-muted-foreground block font-medium">
+              {currentUser ? currentUser.role : 'Compliance Manager'}
+            </span>
           </div>
         </div>
       </div>
