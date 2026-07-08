@@ -8,7 +8,7 @@ import { useApp } from '@/components/Layout/AppContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toggleDemoMode, isDemoMode, loginUser, logoutUser } = useApp();
+  const { loginUser, logoutUser } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,15 +27,8 @@ export default function LoginPage() {
     if (success) {
       router.push('/dashboard');
     } else {
-      setError('Invalid email or password. Hint: default is demo@vigilant.ai / password');
+      setError('Invalid email or password.');
     }
-  };
-
-  const handleDemoBypass = async () => {
-    // Ensure Demo Mode is active
-    if (!isDemoMode) toggleDemoMode();
-    await loginUser('demo@vigilant.ai', 'password');
-    router.push('/dashboard');
   };
 
   return (
@@ -113,22 +106,6 @@ export default function LoginPage() {
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </form>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="h-px bg-white/5 flex-1" />
-          <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Or Evaluators Bypass</span>
-          <div className="h-px bg-white/5 flex-1" />
-        </div>
-
-        {/* One Click Demo bypass */}
-        <button
-          onClick={handleDemoBypass}
-          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-600/10 to-amber-500/10 border border-amber-500/30 text-amber-400 hover:from-amber-500/20 hover:to-amber-500/20 transition-all font-semibold text-sm flex items-center justify-center gap-2"
-        >
-          <Sparkles className="w-4 h-4" />
-          Run Interactive Demo Mode
-        </button>
 
         <p className="mt-6 text-center text-xs text-slate-400">
           Don&apos;t have an account?{' '}

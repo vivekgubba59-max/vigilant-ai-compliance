@@ -517,7 +517,7 @@ The operational regulatory stance is solid at ${complianceRate}%, but requires i
         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Report configuration selector */}
           <div className="space-y-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Select Audit Document Type</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Select Audit Report Type</span>
             
             <div className="space-y-2">
               {[

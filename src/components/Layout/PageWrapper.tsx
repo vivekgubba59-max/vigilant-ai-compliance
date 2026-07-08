@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import DemoBanner from './DemoBanner';
 import { useApp } from './AppContext';
 
 export default function PageWrapper({ children }: { children: React.ReactNode }) {
@@ -50,9 +49,6 @@ export default function PageWrapper({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Dynamic Demo Mode / Key Config Banner */}
-      <DemoBanner />
-      
       <div className="flex flex-1 overflow-hidden">
         {/* Core Sidebar Navigation */}
         <Sidebar />

@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/components/Layout/AppContext';
 import { Building, ShieldCheck, Check, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { callGeminiAgent } from '@/lib/gemini';
-import { DemoDatabase } from '@/lib/mockData';
+import { LocalDatabase } from '@/lib/database';
 
 export default function CompanyProfilePage() {
   const router = useRouter();
-  const { company, updateCompany } = useApp();
+  const { company, updateCompany, apiKey, saveApiKey } = useApp();
   
   const [name, setName] = useState(company.name);
   const [industry, setIndustry] = useState(company.industry);
@@ -17,8 +17,13 @@ export default function CompanyProfilePage() {
   const [employeeCount, setEmployeeCount] = useState(company.employee_count);
   const [gstNumber, setGstNumber] = useState(company.gst_number);
   const [licenses, setLicenses] = useState(company.licenses);
+  const [apiKeyInput, setApiKeyInput] = useState(apiKey);
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+
+  useEffect(() => {
+    setApiKeyInput(apiKey);
+  }, [apiKey]);
 
   const industries = [
     'Manufacturing',
@@ -53,6 +58,9 @@ export default function CompanyProfilePage() {
     setStatusMessage('Analyzing regulatory framework for your industry...');
 
     try {
+      // Save Google Gemini API Key first
+      saveApiKey(apiKeyInput);
+
       const updated = {
         ...company,
         name,
@@ -78,7 +86,7 @@ export default function CompanyProfilePage() {
 
       // Save generated compliances
       if (newObligations && newObligations.length > 0) {
-        DemoDatabase.saveCompliances(newObligations);
+        LocalDatabase.saveCompliances(newObligations);
         // Force context update of scores
         updateCompany(updated);
       }
@@ -217,6 +225,22 @@ export default function CompanyProfilePage() {
                   placeholder="29ABCDE1234F1Z5"
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Google Gemini API Key
+                </label>
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1 font-medium">
+                  Optional. If empty, the system will fall back to server-configured environment variables.
+                </p>
               </div>
             </div>
 

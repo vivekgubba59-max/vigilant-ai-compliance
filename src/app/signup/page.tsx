@@ -8,7 +8,7 @@ import { useApp } from '@/components/Layout/AppContext';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { toggleDemoMode, isDemoMode, signupUser, logoutUser, loginUser } = useApp();
+  const { signupUser, logoutUser } = useApp();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,18 +24,42 @@ export default function SignupPage() {
       setError('Please fill in all fields.');
       return;
     }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    // Strong password validation
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter.');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter.');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number.');
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      setError('Password must contain at least one special character.');
+      return;
+    }
+
     const errMsg = await signupUser(fullName, email, password);
     if (errMsg) {
       setError(errMsg);
     } else {
       router.push('/profile');
     }
-  };
-
-  const handleDemoBypass = async () => {
-    if (!isDemoMode) toggleDemoMode();
-    await loginUser('demo@vigilant.ai', 'password');
-    router.push('/dashboard');
   };
 
   return (
@@ -125,22 +149,6 @@ export default function SignupPage() {
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </form>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="h-px bg-white/5 flex-1" />
-          <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Or Evaluators Bypass</span>
-          <div className="h-px bg-white/5 flex-1" />
-        </div>
-
-        {/* One Click Demo bypass */}
-        <button
-          onClick={handleDemoBypass}
-          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-600/10 to-amber-500/10 border border-amber-500/30 text-amber-400 hover:from-amber-500/20 hover:to-amber-500/20 transition-all font-semibold text-sm flex items-center justify-center gap-2"
-        >
-          <Sparkles className="w-4 h-4" />
-          Run Interactive Demo Mode
-        </button>
 
         <p className="mt-6 text-center text-xs text-slate-400">
           Already have an account?{' '}

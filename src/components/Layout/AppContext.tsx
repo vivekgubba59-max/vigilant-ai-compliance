@@ -4,19 +4,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Company, 
   Compliance, 
-  Document, 
   Notification, 
   ChatMessage, 
   AuditLog, 
-  DemoDatabase,
+  LocalDatabase,
   initialCompany,
   User 
-} from '@/lib/mockData';
+} from '@/lib/database';
 import { callGeminiAgent } from '@/lib/gemini';
 
 interface AppContextType {
-  isDemoMode: boolean;
-  toggleDemoMode: () => void;
   apiKey: string;
   saveApiKey: (key: string) => void;
   company: Company;
@@ -26,9 +23,6 @@ interface AppContextType {
   addCompliance: (title: string, category: string, dueDate: string, priority: string, desc: string) => void;
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
-  documents: Document[];
-  uploadDocument: (fileName: string, fileSize: number, fileText: string, fileBase64?: string, fileMimeType?: string) => Promise<void>;
-  updateDocument: (doc: Document) => void;
   chatMessages: ChatMessage[];
   sendChatMessage: (message: string) => Promise<void>;
   clearChat: () => void;
@@ -45,35 +39,27 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
   const [apiKey, setApiKey] = useState<string>('');
   const [company, setCompany] = useState<Company>(initialCompany);
   const [compliances, setCompliances] = useState<Compliance[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Sync state from DemoDatabase (localStorage wrappers) on client mount
+  // Sync state from LocalDatabase (localStorage wrappers) on client mount
   useEffect(() => {
-    setCompany(DemoDatabase.getCompany());
-    setCompliances(DemoDatabase.getCompliances());
-    setNotifications(DemoDatabase.getNotifications());
-    setDocuments(DemoDatabase.getDocuments());
-    setChatMessages(DemoDatabase.getChatMessages());
-    setAuditLogs(DemoDatabase.getAuditLogs());
-    setCurrentUser(DemoDatabase.getSessionUser());
+    setCompany(LocalDatabase.getCompany());
+    setCompliances(LocalDatabase.getCompliances());
+    setNotifications(LocalDatabase.getNotifications());
+    setChatMessages(LocalDatabase.getChatMessages());
+    setAuditLogs(LocalDatabase.getAuditLogs());
+    setCurrentUser(LocalDatabase.getSessionUser());
 
     const savedKey = localStorage.getItem('vigilant_gemini_api_key') || '';
     setApiKey(savedKey);
-
-    const savedMode = localStorage.getItem('vigilant_demo_mode');
-    if (savedMode !== null) {
-      setIsDemoMode(savedMode === 'true');
-    }
 
     const savedTheme = localStorage.getItem('vigilant_theme') as 'light' | 'dark';
     if (savedTheme) {
@@ -84,46 +70,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const toggleDemoMode = () => {
-    const next = !isDemoMode;
-    setIsDemoMode(next);
-    localStorage.setItem('vigilant_demo_mode', String(next));
-    DemoDatabase.addAuditLog(
-      'System Configuration Change', 
-      `Execution mode changed to ${next ? 'Interactive Demo Mode' : 'Production Mode (API Key active)'}`
-    );
-    setAuditLogs(DemoDatabase.getAuditLogs());
-  };
-
   const saveApiKey = (key: string) => {
     setApiKey(key);
     localStorage.setItem('vigilant_gemini_api_key', key);
-    if (key) {
-      setIsDemoMode(false);
-      localStorage.setItem('vigilant_demo_mode', 'false');
-    }
-    DemoDatabase.addAuditLog('API Configuration Saved', 'Google Gemini API key was updated.');
-    setAuditLogs(DemoDatabase.getAuditLogs());
+    LocalDatabase.addAuditLog('API Configuration Saved', 'Google Gemini API key was updated.');
+    setAuditLogs(LocalDatabase.getAuditLogs());
   };
 
   const updateCompany = (updated: Company) => {
-    DemoDatabase.saveCompany(updated);
+    LocalDatabase.saveCompany(updated);
     // Reload state which recalculates metrics
-    setCompany(DemoDatabase.getCompany());
-    setCompliances(DemoDatabase.getCompliances());
-    DemoDatabase.addAuditLog('Company Profile Updated', `Profile settings updated for ${updated.name}`);
-    setAuditLogs(DemoDatabase.getAuditLogs());
+    setCompany(LocalDatabase.getCompany());
+    setCompliances(LocalDatabase.getCompliances());
+    LocalDatabase.addAuditLog('Company Profile Updated', `Profile settings updated for ${updated.name}`);
+    setAuditLogs(LocalDatabase.getAuditLogs());
   };
 
   const toggleCompliance = (id: string) => {
-    const nextList = DemoDatabase.toggleComplianceStatus(id);
+    const nextList = LocalDatabase.toggleComplianceStatus(id);
     setCompliances(nextList);
-    setCompany(DemoDatabase.getCompany()); // score changes
-    setAuditLogs(DemoDatabase.getAuditLogs());
+    setCompany(LocalDatabase.getCompany()); // score changes
+    setAuditLogs(LocalDatabase.getAuditLogs());
   };
 
   const addCompliance = (title: string, category: string, dueDate: string, priority: string, desc: string) => {
-    const list = DemoDatabase.getCompliances();
+    const list = LocalDatabase.getCompliances();
     const newComp: Compliance = {
       id: `comp-${Date.now()}`,
       company_id: company.id,
@@ -137,135 +108,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       risk_level: priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low',
       created_at: new Date().toISOString(),
     };
-    DemoDatabase.saveCompliances([...list, newComp]);
-    setCompliances(DemoDatabase.getCompliances());
-    setCompany(DemoDatabase.getCompany());
-    DemoDatabase.addAuditLog('Compliance Created', `Added manual obligation: ${title}`);
-    setAuditLogs(DemoDatabase.getAuditLogs());
+    LocalDatabase.saveCompliances([...list, newComp]);
+    setCompliances(LocalDatabase.getCompliances());
+    setCompany(LocalDatabase.getCompany());
+    LocalDatabase.addAuditLog('Compliance Created', `Added manual obligation: ${title}`);
+    setAuditLogs(LocalDatabase.getAuditLogs());
   };
 
   const markNotificationRead = (id: string) => {
-    const nextList = DemoDatabase.markNotificationRead(id);
+    const nextList = LocalDatabase.markNotificationRead(id);
     setNotifications(nextList);
   };
 
-  const uploadDocument = async (
-    fileName: string, 
-    fileSize: number, 
-    fileText: string,
-    fileBase64?: string,
-    fileMimeType?: string
-  ) => {
-    setIsLoading(true);
-    try {
-      const docList = DemoDatabase.getDocuments();
-      
-      const cleanText = (fileText || '').trim();
-      if (cleanText.length < 15) {
-        throw new Error('NO_READABLE_TEXT');
-      }
 
-      // Call AI parse engine
-      const aiResult = await callGeminiAgent('parse_document', {
-        fileName,
-        fileText: cleanText,
-        fileBase64,
-        fileMimeType
-      });
-
-      const isComp = aiResult.is_compliance !== false;
-
-      const newDoc: Document = {
-        id: `doc-${Date.now()}`,
-        company_id: company.id,
-        file_name: fileName,
-        file_url: '#',
-        file_type: fileName.endsWith('.pdf') ? 'application/pdf' : 
-                   (fileName.endsWith('.png') ? 'image/png' : 'image/jpeg'),
-        file_size: fileSize,
-        summary: isComp ? aiResult.summary : aiResult.reason,
-        extracted_data: aiResult,
-        status: 'processed',
-        uploaded_by: 'user-123',
-        created_at: new Date().toISOString()
-      };
-
-      DemoDatabase.saveDocuments([newDoc, ...docList]);
-      setDocuments(DemoDatabase.getDocuments());
-
-      // Auto generate checklists extracted from document into the Tracker ONLY if it is compliance related!
-      if (isComp && aiResult.checklists && aiResult.checklists.length > 0) {
-        const compList = DemoDatabase.getCompliances();
-        const newComps: Compliance[] = aiResult.checklists.map((task: string, index: number) => {
-          // Parse due date if any extracted, otherwise set in 7 days
-          const matchedDeadline = aiResult.deadlines?.[0]?.date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          
-          return {
-            id: `comp-doc-${Date.now()}-${index}`,
-            company_id: company.id,
-            title: task.length > 50 ? task.substring(0, 47) + '...' : task,
-            description: `Extracted from uploaded document "${fileName}": ${task}`,
-            category: 'General',
-            status: 'pending',
-            priority: 'medium',
-            due_date: matchedDeadline,
-            penalty_amount: aiResult.penalties?.[0]?.amount || 1000,
-            risk_level: 'medium',
-            created_at: new Date().toISOString()
-          };
-        });
-
-        DemoDatabase.saveCompliances([...newComps, ...compList]);
-        setCompliances(DemoDatabase.getCompliances());
-        setCompany(DemoDatabase.getCompany());
-      }
-
-      // Add warning notifications if penalties detected and it is compliance related!
-      if (isComp && aiResult.penalties && aiResult.penalties.length > 0) {
-        const notifList = DemoDatabase.getNotifications();
-        const warningNotif: Notification = {
-          id: `notif-${Date.now()}`,
-          company_id: company.id,
-          title: `Compliance Risk: ${fileName}`,
-          message: `Identified potential liability of ${aiResult.penalties[0].amount} INR for violation of ${aiResult.penalties[0].violation}.`,
-          type: 'warning',
-          read: false,
-          created_at: new Date().toISOString()
-        };
-        DemoDatabase.saveNotifications([warningNotif, ...notifList]);
-        setNotifications(DemoDatabase.getNotifications());
-      }
-
-      DemoDatabase.addAuditLog('Document Uploaded & Parsed', `Processed "${fileName}" using AI compliances extraction.`);
-      setAuditLogs(DemoDatabase.getAuditLogs());
-    } catch (e: any) {
-      if (e.message !== 'LOW_CONFIDENCE' && e.message !== 'NO_READABLE_TEXT') {
-        console.error(e);
-      } else {
-        console.warn("Upload document warning:", e.message);
-      }
-      DemoDatabase.addAuditLog('Document Upload Failed', `Failed parsing "${fileName}"`);
-      setAuditLogs(DemoDatabase.getAuditLogs());
-      throw e; // rethrow so UI can handle toast and progress errors!
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateDocument = (updatedDoc: Document) => {
-    const list = DemoDatabase.getDocuments();
-    const nextList = list.map(d => d.id === updatedDoc.id ? updatedDoc : d);
-    DemoDatabase.saveDocuments(nextList);
-    setDocuments(DemoDatabase.getDocuments());
-    DemoDatabase.addAuditLog('Document Edited', `Updated OCR audit records for "${updatedDoc.file_name}"`);
-    setAuditLogs(DemoDatabase.getAuditLogs());
-  };
 
   const sendChatMessage = async (msg: string) => {
     if (!msg.trim()) return;
 
     // Save user message
-    const updatedChat = DemoDatabase.addChatMessage('user', msg);
+    const updatedChat = LocalDatabase.addChatMessage('user', msg);
     setChatMessages(updatedChat);
     setIsLoading(true);
 
@@ -279,11 +140,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         company
       });
 
-      const finalChat = DemoDatabase.addChatMessage('ai', aiReply);
+      const finalChat = LocalDatabase.addChatMessage('ai', aiReply);
       setChatMessages(finalChat);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      const finalChat = DemoDatabase.addChatMessage('ai', 'My apologies. I encountered a server communication error while analyzing that query. Please check your connectivity and try again.');
+      const errText = e.message || '';
+      let reply = 'My apologies. I encountered a server communication error while analyzing that query. Please check your connectivity and try again.';
+      if (errText.includes("Gemini API Key is missing") || errText.includes("configured Gemini API key is invalid")) {
+        reply = errText;
+      }
+      const finalChat = LocalDatabase.addChatMessage('ai', reply);
       setChatMessages(finalChat);
     } finally {
       setIsLoading(false);
@@ -291,10 +157,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearChat = () => {
-    DemoDatabase.saveChatMessages([]);
+    LocalDatabase.saveChatMessages([]);
     setChatMessages([]);
-    DemoDatabase.addAuditLog('Chat History Cleared', 'Compliance assistant conversation logs reset.');
-    setAuditLogs(DemoDatabase.getAuditLogs());
+    LocalDatabase.addAuditLog('Chat History Cleared', 'Compliance assistant conversation logs reset.');
+    setAuditLogs(LocalDatabase.getAuditLogs());
   };
 
   const toggleTheme = () => {
@@ -305,7 +171,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginUser = async (email: string, password: string): Promise<boolean> => {
-    const user = DemoDatabase.loginUser(email, password);
+    const user = await LocalDatabase.loginUser(email, password);
     if (user) {
       setCurrentUser(user);
       return true;
@@ -314,7 +180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signupUser = async (fullName: string, email: string, password: string): Promise<string | null> => {
-    const result = DemoDatabase.registerUser(fullName, email, password);
+    const result = await LocalDatabase.registerUser(fullName, email, password);
     if (typeof result === 'string') {
       return result;
     }
@@ -323,15 +189,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logoutUser = () => {
-    DemoDatabase.setSessionUser(null);
+    LocalDatabase.setSessionUser(null);
     setCurrentUser(null);
   };
 
   return (
     <AppContext.Provider
       value={{
-        isDemoMode,
-        toggleDemoMode,
         apiKey,
         saveApiKey,
         company,
@@ -341,9 +205,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addCompliance,
         notifications,
         markNotificationRead,
-        documents,
-        uploadDocument,
-        updateDocument,
         chatMessages,
         sendChatMessage,
         clearChat,

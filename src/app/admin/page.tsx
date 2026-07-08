@@ -14,7 +14,7 @@ import {
   Send,
   Trash2
 } from 'lucide-react';
-import { DemoDatabase } from '@/lib/mockData';
+import { LocalDatabase } from '@/lib/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function AdminPanelPage() {
@@ -42,8 +42,8 @@ export default function AdminPanelPage() {
     e.preventDefault();
     if (!broadcastTitle || !broadcastMsg) return;
 
-    // Retrieve active notifications from DemoDatabase, push new notification and save
-    const currentNotifs = DemoDatabase.getNotifications();
+    // Retrieve active notifications from LocalDatabase, push new notification and save
+    const currentNotifs = LocalDatabase.getNotifications();
     const newNotif = {
       id: `notif-admin-${Date.now()}`,
       company_id: company.id, // broadcasts to our tenant
@@ -54,8 +54,8 @@ export default function AdminPanelPage() {
       created_at: new Date().toISOString()
     };
 
-    DemoDatabase.saveNotifications([newNotif, ...currentNotifs]);
-    DemoDatabase.addAuditLog('System Broadcast Dispatched', `Broadcasted notification: ${broadcastTitle}`);
+    LocalDatabase.saveNotifications([newNotif, ...currentNotifs]);
+    LocalDatabase.addAuditLog('System Broadcast Dispatched', `Broadcasted notification: ${broadcastTitle}`);
     
     // Reset Form & Show Success banner
     setBroadcastTitle('');

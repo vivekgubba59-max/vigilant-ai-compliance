@@ -39,18 +39,15 @@ export default function LandingPage() {
         {/* Startup Pitch Tag */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-400 text-xs font-medium mb-6">
           <Cpu className="w-3.5 h-3.5" />
-          National Hackathon Finalist • Built for Indian SMEs
+          AI-Powered Compliance Management Platform
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight max-w-4xl">
-          Automate Your Indian SME Compliances with{' '}
-          <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            AI Intelligence
-          </span>
+          AI-Powered Compliance Management for Indian Businesses
         </h1>
 
         <p className="text-slate-400 text-base sm:text-lg max-w-2xl mb-8 leading-relaxed">
-          Actively tracks GST filings, EPF/ESI contributions, Labour Registers, Factory compliance certificates, and pollution returns. Upload notices, talk in Hindi or Telugu, and let AI handle the heavy lifting.
+          Automate GST, EPF, ESI, Labour Law, Factory Act and Regulatory Compliance with intelligent reminders and real-time compliance tracking.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-16">
@@ -58,15 +55,15 @@ export default function LandingPage() {
             href="/signup" 
             className="px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 transition-all font-semibold shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2 group hover:scale-105"
           >
-            Launch Regulatory Cockpit
+            Get Started
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           
           <Link 
-            href="/dashboard" 
+            href="/login" 
             className="px-6 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all font-semibold flex items-center justify-center gap-2 hover:scale-105"
           >
-            Enter Demo Mode
+            Sign In
           </Link>
         </div>
 

@@ -24,7 +24,6 @@ export default function Sidebar() {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Compliance Tracker', href: '/tracker', icon: CalendarCheck },
-    { name: 'Document Upload', href: '/documents', icon: FileText },
     { name: 'AI Compliance Chat', href: '/chat', icon: MessageSquare },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Company Profile', href: '/profile', icon: Building },

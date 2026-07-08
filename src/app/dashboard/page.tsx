@@ -12,7 +12,6 @@ import {
   ShieldAlert, 
   ArrowRight,
   TrendingUp,
-  FileText,
   MessageSquare
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -81,9 +80,9 @@ export default function DashboardPage() {
       recs.push({
         id: 'rec-default',
         title: 'General Health Audit Status: Excellent',
-        desc: 'Your compliance score is healthy. Upload tax notices or vendor contracts to audit custom obligations.',
-        action: 'Upload Contract Document',
-        link: '/documents'
+        desc: 'Your compliance score is healthy. Continue monitoring tracker milestones regularly.',
+        action: 'Open Compliance Tracker',
+        link: '/tracker'
       });
     }
 
@@ -107,13 +106,6 @@ export default function DashboardPage() {
           >
             <MessageSquare className="w-3.5 h-3.5" />
             Query Copilot
-          </Link>
-          <Link
-            href="/documents"
-            className="px-4 py-2 text-xs font-semibold rounded-lg border border-border bg-card text-card-foreground hover:bg-secondary flex items-center gap-1.5 transition-all"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            Scan Document
           </Link>
         </div>
       </div>
